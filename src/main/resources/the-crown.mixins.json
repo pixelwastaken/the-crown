@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "package": "dirt.thecrown.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "BedBlockMixin",
+    "ExampleMixin",
+    "LivingEntityMixin",
+    "PlayerListMixin",
+    "PlayerMixin",
+    "ServerPlayerMixin",
+    "WaypointTransmitterMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+	}
+}

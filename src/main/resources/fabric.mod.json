@@ -1,0 +1,45 @@
+{
+	"schemaVersion": 1,
+	"id": "the-crown",
+	"version": "1.2.1",
+	"name": "The Crown",
+	"description": "chelloe season 2 the crown mod for the twist",
+	"authors": [
+		"CodingDirt12",
+		"Special thanks to: MINTY4949 & ItsGamerGavin"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/the-crown/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"dirt.thecrown.TheCrown"
+		],
+		"server": [
+			"dirt.thecrown.event.ServerModEvents"
+		],
+		"client": [
+			"dirt.thecrown.client.TheCrownClient"
+		]
+	},
+	"mixins": [
+		"the-crown.mixins.json",
+		{
+			"config": "the-crown.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.2",
+		"minecraft": "~26.1.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"luckperms": "*"
+	}
+}
