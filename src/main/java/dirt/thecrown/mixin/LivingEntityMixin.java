@@ -28,6 +28,9 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Debug(
         export = true
 )
@@ -69,7 +72,7 @@ public abstract class LivingEntityMixin extends Entity implements Attackable, Wa
     }
 
     @Inject(
-            method = {"Lnet/minecraft/world/entity/LivingEntity;checkTotemDeathProtection(Lnet/minecraft/world/damagesource/DamageSource;)Z"},
+            method = {"checkTotemDeathProtection(Lnet/minecraft/world/damagesource/DamageSource;)Z"},
             at = {@At("HEAD")},
             cancellable = true
     )
@@ -83,7 +86,7 @@ public abstract class LivingEntityMixin extends Entity implements Attackable, Wa
     }
 
     @Inject(
-            method = {"Lnet/minecraft/world/entity/LivingEntity;dropAllDeathLoot(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/damagesource/DamageSource;)V"},
+            method = {"dropAllDeathLoot(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/damagesource/DamageSource;)V"},
             at = {@At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/world/entity/LivingEntity;dropEquipment(Lnet/minecraft/server/level/ServerLevel;)V",
@@ -101,8 +104,35 @@ public abstract class LivingEntityMixin extends Entity implements Attackable, Wa
 
     }
 
+
+    @Inject(
+            method = {"checkTotemDeathProtection(Lnet/minecraft/world/damagesource/DamageSource;)Z"},
+            at = {@At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/advancements/criterion/UsedTotemTrigger;trigger(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/world/item/ItemStack;)V",
+                    shift = Shift.AFTER
+            )}
+    )
+    private void logTotemUse(DamageSource killingDamage, CallbackInfoReturnable<Boolean> cir) {
+        LivingEntity self = (LivingEntity)(Object)this;
+        if (self instanceof ServerPlayer plr) {
+            Entity offender = killingDamage.getEntity();
+
+            String offenderName = offender != null ? offender.getPlainTextName() : "Natural causes";
+            String offenderType = offender != null ? offender.getType().toShortString() : "NATURAL";
+
+            // Get current date and time
+            LocalDateTime now = LocalDateTime.now();
+
+            // Format the date and time
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss a");
+
+            TheCrown.LOGGER.info("TOTEM POP: {}'s totem was popped by {}. ENTITY TYPE: {}. TIME: {}", plr.getPlainTextName(), offenderName, offenderType, now.format(formatter));
+        }
+    }
+
     @ModifyExpressionValue(
-            method = {"Lnet/minecraft/world/entity/LivingEntity;checkTotemDeathProtection(Lnet/minecraft/world/damagesource/DamageSource;)Z"},
+            method = {"checkTotemDeathProtection(Lnet/minecraft/world/damagesource/DamageSource;)Z"},
             at = {@At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/world/entity/LivingEntity;getItemInHand(Lnet/minecraft/world/InteractionHand;)Lnet/minecraft/world/item/ItemStack;"

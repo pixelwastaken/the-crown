@@ -286,6 +286,7 @@ public class ServerModEvents implements DedicatedServerModInitializer {
 
         Component compMessage = Component.literal(message).withStyle(ChatFormatting.GOLD);
         server.getPlayerList().broadcastSystemMessage(compMessage, false);
+        server.sendSystemMessage(compMessage);
         ActionbarManager.queue(server, compMessage, 200);
     }
 
