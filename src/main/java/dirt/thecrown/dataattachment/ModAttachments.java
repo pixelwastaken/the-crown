@@ -18,4 +18,11 @@ public class ModAttachments {
                     .initializer(() -> false) // The default value of the Attachment, if one has not been set.
                     .persistent(Codec.BOOL) // Dictates how this Attachment's data should be saved and loaded.
     );
+
+    public static final AttachmentType<Long> COMBAT_LOG_ATTACHMENT = AttachmentRegistry.create(
+            Identifier.fromNamespaceAndPath(TheCrown.MOD_ID, "combat_log_attachment"), // The ID of your Attachment
+            builder -> builder
+                    .initializer(() -> 0L) // The default value of the Attachment, if one has not been set.
+                    .persistent(Codec.LONG) // Dictates how this Attachment's data should be saved and loaded.
+    );
 }

@@ -12,10 +12,13 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.math.Transformation;
 import dirt.thecrown.TheCrown;
+import dirt.thecrown.dataattachment.ModAttachments;
 import dirt.thecrown.item.ModItems;
 import dirt.thecrown.saveddata.SavedBedBombData;
 import dirt.thecrown.saveddata.SavedCrownPedestalData;
 import dirt.thecrown.saveddata.SavedRecentKingData;
+
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -343,6 +346,26 @@ public class ServerModEvents implements DedicatedServerModInitializer {
             }
 
         });
+
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            if (entity instanceof ServerPlayer victim && ModItems.isWearingCrown(victim)) {
+                // set the combat log time
+                victim.setAttached(ModAttachments.COMBAT_LOG_ATTACHMENT, Instant.now().getEpochSecond());
+            }
+
+            return true;
+        });
+
+        ServerPlayerEvents.LEAVE.register(player -> {
+            long lastCombatLogTime = player.getAttachedOrSet(ModAttachments.COMBAT_LOG_ATTACHMENT, 0L).longValue();
+
+            //if the current epoch - the last recorded damage epoch is less than or equal to 30 seconds, then they have combat logged!!!
+            if (Instant.now().getEpochSecond() - lastCombatLogTime <= 30) {
+                //TODO transfer crown, since there was a combat log
+                TheCrown.LOGGER.info("{} combat logged with the crown!", player.getPlainTextName());
+            }
+        });
+
         ServerTickEvents.END_SERVER_TICK.register(ActionbarManager::tick);
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(ServerModEvents::afterPlayerChangeLevel);
         ServerPlayerEvents.JOIN.register((ServerPlayerEvents.Join)(player) -> afterPlayerChangeLevel(player, (ServerLevel)null, player.level()));
