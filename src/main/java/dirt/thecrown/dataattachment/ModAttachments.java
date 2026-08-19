@@ -25,4 +25,12 @@ public class ModAttachments {
                     .initializer(() -> 0L) // The default value of the Attachment, if one has not been set.
                     .persistent(Codec.LONG) // Dictates how this Attachment's data should be saved and loaded.
     );
+
+    //an edge detection for combat logging system
+    public static final AttachmentType<Boolean> WAS_IN_COMBAT_ATTACHMENT = AttachmentRegistry.create(
+            Identifier.fromNamespaceAndPath(TheCrown.MOD_ID, "was_in_combat_attachment"), // The ID of your Attachment
+            builder -> builder
+                    .initializer(() -> false) // The default value of the Attachment, if one has not been set.
+                    .persistent(Codec.BOOL) // Dictates how this Attachment's data should be saved and loaded.
+    );
 }

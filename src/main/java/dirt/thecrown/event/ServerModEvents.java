@@ -5,15 +5,18 @@
 
 package dirt.thecrown.event;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.logging.LogUtils;
 import com.mojang.math.Transformation;
 import dirt.thecrown.TheCrown;
 import dirt.thecrown.dataattachment.ModAttachments;
 import dirt.thecrown.item.ModItems;
+import dirt.thecrown.mixin.EntityAccessor;
 import dirt.thecrown.saveddata.SavedBedBombData;
 import dirt.thecrown.saveddata.SavedCrownPedestalData;
 import dirt.thecrown.saveddata.SavedRecentKingData;
@@ -21,6 +24,7 @@ import dirt.thecrown.saveddata.SavedRecentKingData;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -36,7 +40,9 @@ import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.data.NodeMap;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
+import net.luckperms.api.model.user.UserManager;
 import net.luckperms.api.node.types.InheritanceNode;
+import net.luckperms.api.node.types.PermissionNode;
 import net.luckperms.api.node.types.SuffixNode;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -47,17 +53,20 @@ import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -71,6 +80,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.waypoints.Waypoint;
 import net.minecraft.world.waypoints.WaypointStyleAsset;
@@ -88,6 +99,41 @@ public class ServerModEvents implements DedicatedServerModInitializer {
 
     public ServerModEvents() {
         this.possibleCrownEffects = new CrownMobEffectUtil[]{new CrownMobEffectUtil(MobEffects.BLINDNESS, 1), new CrownMobEffectUtil(MobEffects.SLOWNESS, 4), new CrownMobEffectUtil(MobEffects.POISON, 2), new CrownMobEffectUtil(MobEffects.WEAKNESS, 2), new CrownMobEffectUtil(MobEffects.HUNGER, 5), new CrownMobEffectUtil(MobEffects.MINING_FATIGUE, 3), new CrownMobEffectUtil(MobEffects.SLOW_FALLING, 1), new CrownMobEffectUtil(MobEffects.JUMP_BOOST, 2), new CrownMobEffectUtil(MobEffects.INVISIBILITY, 1), new CrownMobEffectUtil(MobEffects.SLOWNESS, 2, MobEffects.RESISTANCE, 1), new CrownMobEffectUtil(MobEffects.STRENGTH, 2), new CrownMobEffectUtil(MobEffects.HASTE, 2), new CrownMobEffectUtil(MobEffects.REGENERATION, 2), new CrownMobEffectUtil(MobEffects.RESISTANCE, 2), new CrownMobEffectUtil(MobEffects.SATURATION, 1), new CrownMobEffectUtil(MobEffects.ABSORPTION, 3)};
+    }
+
+    //this is the same code from potatoboy's InvView mod
+    // this grabs a player instance, even if that person isnt online
+    private static ServerPlayer getRequestedPlayer(CommandContext<CommandSourceStack> context, String playerParameterName)
+            throws CommandSyntaxException {
+        MinecraftServer minecraftServer = context.getSource().getServer();
+        NameAndId playerConfigEntry = GameProfileArgument.getGameProfiles(context, playerParameterName).iterator().next();
+        ServerPlayer requestedPlayer = minecraftServer.getPlayerList().getPlayerByName(playerConfigEntry.name());
+
+        // If player is not currently online
+        if (requestedPlayer == null) {
+            requestedPlayer = new ServerPlayer(minecraftServer, minecraftServer.overworld(), new GameProfile(playerConfigEntry.id(), playerConfigEntry.name()),
+                    ClientInformation.createDefault());
+            Optional<ValueInput> readViewOpt = minecraftServer.getPlayerList()
+                    .loadPlayerData(playerConfigEntry).map(playerData -> TagValueInput.create(new ProblemReporter.ScopedCollector(LogUtils.getLogger()), minecraftServer.registryAccess(), playerData));
+            readViewOpt.ifPresent(requestedPlayer::load);
+
+            // Avoids player's dimension being reset to the overworld
+            if (readViewOpt.isPresent()) {
+                ValueInput readView = readViewOpt.get();
+                Optional<String> dimension = readView.getString("Dimension");
+
+                if (dimension.isPresent()) {
+                    ServerLevel world = minecraftServer.getLevel(
+                            ResourceKey.create(Registries.DIMENSION, Identifier.tryParse(dimension.get())));
+
+                    if (world != null) {
+                        ((EntityAccessor) requestedPlayer).callSetLevel(world);
+                    }
+                }
+            }
+        }
+
+        return requestedPlayer;
     }
 
     private static void giveCrownIcon(ServerLevel level, WaypointTransmitter waypoint) {
@@ -274,6 +320,43 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         }
     }
 
+    //TODO implement the command into the dispatch thing
+    private static int forceRemoveCrownCommand(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Collection<NameAndId> nameAndIds = GameProfileArgument.getGameProfiles(context, "player");
+        if (nameAndIds.size() > 1) {
+            ((CommandSourceStack)context.getSource()).sendFailure(Component.literal("Cannot remove crown, the crown can only be removed to one person at a time.").withStyle(ChatFormatting.RED));
+            return 0;
+        } else {
+            ServerPlayer player = getRequestedPlayer(context, "player");
+
+            if (TheCrown.hasLuckPerms) {
+                //remove perms (this will happen regardless)
+                LuckPerms lp = LuckPermsProvider.get();
+                UserManager userManager = lp.getUserManager();
+                CompletableFuture<User> userFuture = userManager.loadUser(player.getUUID());
+
+                userFuture.thenAcceptAsync(user -> {
+                    // Now we have a user which we can query.
+
+                });
+            }
+
+            if (ModItems.isWearingCrown(player)) {
+                //Player has crown
+                //TODO SUCCESS
+
+                //remove item
+
+
+                broadcastGlobalMessage(((CommandSourceStack)context.getSource()).getServer(), "%s's Crown has been force removed!".formatted(player.getPlainTextName()));
+                return 1;
+            }
+            //Player isn't wearing the crown
+            context.getSource().sendFailure(Component.literal("Cannot remove crown, target player does not have the crown. \nHowever, any residual permissions that this person may have had \nwhile owning The Crown has been removed.").withStyle(ChatFormatting.GOLD));
+            return 0;
+        }
+    }
+
     private static int toggleBedBombCommand(CommandContext<CommandSourceStack> context) {
         boolean f = BoolArgumentType.getBool(context, "value");
         SavedBedBombData savedBedBombData = SavedBedBombData.getSavedBedBombData(((CommandSourceStack)context.getSource()).getServer());
@@ -290,7 +373,7 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         Component compMessage = Component.literal(message).withStyle(ChatFormatting.GOLD);
         server.getPlayerList().broadcastSystemMessage(compMessage, false);
         server.sendSystemMessage(compMessage);
-        ActionbarManager.queue(server, compMessage, 200);
+        ActionbarManager.queue(compMessage, 200);
     }
 
     public void onInitializeServer() {
@@ -348,9 +431,24 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         });
 
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
-            if (entity instanceof ServerPlayer victim && ModItems.isWearingCrown(victim)) {
+            if (entity instanceof ServerPlayer victim && source.getEntity() instanceof ServerPlayer attacker && ModItems.isWearingCrown(victim)) {
                 // set the combat log time
                 victim.setAttached(ModAttachments.COMBAT_LOG_ATTACHMENT, Instant.now().getEpochSecond());
+
+
+                if (TheCrown.hasLuckPerms) {
+                    //remove the ability to warp, since this person is now in combat
+                    LuckPerms lp = LuckPermsProvider.get();
+                    User currentUser = lp.getPlayerAdapter(ServerPlayer.class).getUser(victim);
+
+                    //set warp perms to false
+                    currentUser.data().add(PermissionNode.builder().permission("blossom").value(false).build());
+                    currentUser.data().add(PermissionNode.builder().permission("blossom.warps.warp").value(false).build());
+                    currentUser.data().add(PermissionNode.builder().permission("blossom.tpa").value(false).build());
+
+                    lp.getUserManager().saveUser(currentUser);
+                }
+
             }
 
             return true;
@@ -360,7 +458,7 @@ public class ServerModEvents implements DedicatedServerModInitializer {
             long lastCombatLogTime = player.getAttachedOrSet(ModAttachments.COMBAT_LOG_ATTACHMENT, 0L).longValue();
 
             //if the current epoch - the last recorded damage epoch is less than or equal to 30 seconds, then they have combat logged!!!
-            if (Instant.now().getEpochSecond() - lastCombatLogTime <= 30) {
+            if (Instant.now().getEpochSecond() - lastCombatLogTime < 30) {
                 //TODO transfer crown, since there was a combat log
                 TheCrown.LOGGER.info("{} combat logged with the crown!", player.getPlainTextName());
             }
