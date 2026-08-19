@@ -127,7 +127,7 @@ public abstract class LivingEntityMixin extends Entity implements Attackable, Wa
             // Format the date and time
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss a");
 
-            TheCrown.LOGGER.info("TOTEM POP: {}'s totem was popped by {}. ENTITY TYPE: {}. TIME: {}", plr.getPlainTextName(), offenderName, offenderType, now.format(formatter));
+            TheCrown.LOGGER.info("TOTEM POP: {}'s totem was popped by {}. ENTITY TYPE: {}. KILL CREDIT: {}. TIME: {}", plr.getPlainTextName(), offenderName, offenderType, self.getKillCredit() != null ? self.getKillCredit().getPlainTextName() : "None", now.format(formatter));
         }
     }
 
