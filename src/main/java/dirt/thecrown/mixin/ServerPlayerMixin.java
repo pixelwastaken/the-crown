@@ -73,7 +73,7 @@ public abstract class ServerPlayerMixin extends Player {
             TheCrown.LOGGER.info("Restoring player: they have the crown or were killed by someone the crown");
             this.privateDestroyVanishingCursedItems(oldPlayer);
         } else {
-            TheCrown.LOGGER.info("Player will not be restored. Kill Credit: {},\n Old Player: {},\n New Player: {}", new Object[]{killCredit, oldPlayer, this});
+            TheCrown.LOGGER.info("Player will not be restored. Kill Credit: {},\n Old Player: {},\n New Player: {}", killCredit, oldPlayer, this);
         }
 
         return original || hasCrown;

@@ -7,6 +7,7 @@ package dirt.thecrown.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import dirt.thecrown.TheCrown;
+import dirt.thecrown.dataattachment.ModAttachments;
 import dirt.thecrown.item.ModItems;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
@@ -97,7 +98,7 @@ public abstract class LivingEntityMixin extends Entity implements Attackable, Wa
     private void preventXpDrop(ServerLevel level, DamageSource source, CallbackInfo ci) {
         Entity self = level.getEntity(this.getId());
         if (self instanceof ServerPlayer plr) {
-            if (ModItems.isWearingCrown(plr) || plr.getKillCredit() != null && ModItems.isWearingCrown(plr.getKillCredit())) {
+            if (plr.getAttachedOrCreate(ModAttachments.MUST_RESTORE_ITEMS_ATTACHMENT) || ModItems.isWearingCrown(plr) || plr.getKillCredit() != null && ModItems.isWearingCrown(plr.getKillCredit())) {
                 ci.cancel();
             }
         }

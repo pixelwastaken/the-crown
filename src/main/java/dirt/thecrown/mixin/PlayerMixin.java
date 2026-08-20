@@ -35,6 +35,8 @@ public abstract class PlayerMixin {
                 TheCrown.LOGGER.info("Cancelled! that player got killed by someone wearing the crown");
                 self.setAttached(ModAttachments.MUST_RESTORE_ITEMS_ATTACHMENT, true);
                 ci.cancel();
+            } else if (self.getAttachedOrCreate(ModAttachments.MUST_RESTORE_ITEMS_ATTACHMENT)) {
+                ci.cancel();
             }
 
         }

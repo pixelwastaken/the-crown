@@ -6,8 +6,8 @@
     "BedBlockMixin",
     "EntityAccessor",
     "ExampleMixin",
+    "ItemEntityMixin",
     "LivingEntityMixin",
-    "PlayerListMixin",
     "PlayerMixin",
     "ServerPlayerMixin",
     "WaypointTransmitterMixin"
