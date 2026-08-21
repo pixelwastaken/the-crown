@@ -45,7 +45,7 @@ public abstract class ServerPlayerMixin extends Player {
     }
 
     @Inject(
-            method = {"Lnet/minecraft/server/level/ServerPlayer;updatePlayerAttributes()V"},
+            method = {"updatePlayerAttributes()V"},
             at = {@At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/server/level/ServerPlayer;isCrouching()Z"

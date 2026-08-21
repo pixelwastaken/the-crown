@@ -117,7 +117,7 @@ public abstract class LivingEntityMixin extends Entity implements Attackable, Wa
     private void logTotemUse(DamageSource killingDamage, CallbackInfoReturnable<Boolean> cir) {
         LivingEntity self = (LivingEntity)(Object)this;
         if (self instanceof ServerPlayer plr) {
-            Entity offender = killingDamage.getEntity();
+            LivingEntity offender = plr.getKillCredit();
 
             String offenderName = offender != null ? offender.getPlainTextName() : "Natural causes";
             String offenderType = offender != null ? offender.getType().toShortString() : "NATURAL";

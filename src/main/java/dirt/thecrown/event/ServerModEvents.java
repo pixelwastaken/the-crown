@@ -21,6 +21,7 @@ import dirt.thecrown.saveddata.SavedRecentKingData;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -51,6 +52,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -73,7 +75,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Interaction;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -337,39 +338,39 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         }
     }
 
-    private static int removeSpeedGlitchCommand(CommandContext<CommandSourceStack> context) {
-        ServerPlayer player = context.getSource().getPlayer();
-        // reset movement speed att
-//        player.getAttributes().resetBaseValue(Attributes.MOVEMENT_SPEED);
-//
-//        // cache current player health & position
-//        float curHealth = player.getHealth();
-//        Vec3 curPos = player.position();
-//
-//        // kill player (but make sure they keep inv & xp)
-//        player.setAttached(ModAttachments.MUST_RESTORE_ITEMS_ATTACHMENT, true);
-//        player.kill(player.level());
-//
-//        // move player back to spot when cmd was executed
-//        // set player health to health when cmd was executed
+    /// helper method that removes the speed glitch from a player, and sends them a message for fail/succession
+    private static int removeSpeedGlitch(ServerPlayer player, CommandContext<CommandSourceStack> context) {
         AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
-
-        for (AttributeModifier modifier : speed.getModifiers()) {
-            if (modifier.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_BASE ||
-                    modifier.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL ||
-                    modifier.operation() == AttributeModifier.Operation.ADD_VALUE) {
-
-                // Only remove modifiers you added OR speed-effect modifiers
-                speed.removeModifier(modifier);
-            }
+        if (speed == null) {
+            context.getSource().sendFailure(Component.literal("Could not find %s's movement speed attribute.".formatted(player.getPlainTextName())).withStyle(ChatFormatting.RED));
+            return 0;
         }
 
-
-        player.refreshDimensions();
-
-
-        context.getSource().sendSuccess(() -> Component.literal("Your speed glitch has been removed.").withStyle(ChatFormatting.BLUE), false);
+        // Repair the persisted vanilla base value without removing legitimate
+        // sprinting, effect, or equipment modifiers.
+        player.getAttributes().resetBaseValue(Attributes.MOVEMENT_SPEED);
+        player.connection.send(new ClientboundUpdateAttributesPacket(player.getId(), List.of(speed)));
+        context.getSource().sendSuccess(() -> Component.literal("%s's speed glitch has been removed.".formatted(player.getPlainTextName())).withStyle(ChatFormatting.BLUE), false);
         return 1;
+    }
+
+    /// command that removes the speed glitch from the player who runs it
+    private static int removeSpeedGlitchCommand(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = context.getSource().getPlayer();
+        return removeSpeedGlitch(player, context);
+    }
+
+    /// command that removes the speed glitch from any player(s)
+    private static int adminRemoveSpeedGlitchCommand(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Collection<NameAndId> nameAndIds = GameProfileArgument.getGameProfiles(context, "player");
+        int result = 1;
+        for (NameAndId nameAndId : nameAndIds) {
+            ServerPlayer plr = context.getSource().getServer().getPlayerList().getPlayer(nameAndId.id());
+            //if this has a fail result, the command will fail
+            //the command will fail as long as at least ONE player has failed
+            result = removeSpeedGlitch(plr, context);
+        }
+        return result;
     }
 
     private static int toggleBedBombCommand(CommandContext<CommandSourceStack> context) {
@@ -424,13 +425,19 @@ public class ServerModEvents implements DedicatedServerModInitializer {
                 return false;
             })).executes(ServerModEvents::resignCrownCommand));
             dispatcher.register(Commands.literal("forceremovecrown")
-                    .then((Commands
+                    .then(Commands
                             .argument("player", GameProfileArgument.gameProfile())
                             .requires(
                                     (source) -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
-                    ).executes(ServerModEvents::forceRemoveCrownCommand)));
+                            .executes(ServerModEvents::forceRemoveCrownCommand)));
             dispatcher.register(Commands.literal("removespeedglitch")
                     .executes(ServerModEvents::removeSpeedGlitchCommand));
+            dispatcher.register(Commands.literal("fremovespeedglitch")
+                    .then(Commands
+                            .argument("player", GameProfileArgument.gameProfile())
+                            .requires(
+                                    (source) -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
+                            .executes(ServerModEvents::adminRemoveSpeedGlitchCommand)));
         });
         UseEntityCallback.EVENT.register((UseEntityCallback)(player, level, hand, entity, hitResult) -> {
             ServerLevel serverLevel = (ServerLevel)level;
@@ -460,7 +467,7 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         });
 
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
-            if (entity instanceof ServerPlayer victim && source.getEntity() instanceof ServerPlayer attacker && ModItems.isWearingCrown(victim)) {
+            if (entity instanceof ServerPlayer victim && victim.getKillCredit() instanceof ServerPlayer attacker && ModItems.isWearingCrown(victim)) {
                 // set the combat log time
                 victim.setAttached(ModAttachments.COMBAT_LOG_ATTACHMENT, Instant.now().getEpochSecond());
 
@@ -586,4 +593,6 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         DefaultItemComponentEvents.MODIFY.register((DefaultItemComponentEvents.ModifyCallback)(modifyContext) -> modifyContext.modify(ModItems.CROWN, ModItems::crownDefaultItemComponents));
         DefaultItemComponentEvents.MODIFY.register((DefaultItemComponentEvents.ModifyCallback)(modifyContext) -> modifyContext.modify(ModItems.CRACKED_CROWN, ModItems::crownDefaultItemComponents));
     }
+
+
 }
