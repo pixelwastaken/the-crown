@@ -93,6 +93,7 @@ public class ServerModEvents implements DedicatedServerModInitializer {
     static SuffixNode endSuffix;
     CrownMobEffectUtil[] possibleCrownEffects;
     static ArrayList<UUID> loseCrownLaterUUIDs = new ArrayList<>();
+    static ArrayList<UUID> removeCrownNextTickUUIDs = new ArrayList<>();
 
     public ServerModEvents() {
         this.possibleCrownEffects = new CrownMobEffectUtil[]{new CrownMobEffectUtil(MobEffects.BLINDNESS, 1), new CrownMobEffectUtil(MobEffects.SLOWNESS, 4), new CrownMobEffectUtil(MobEffects.POISON, 2), new CrownMobEffectUtil(MobEffects.WEAKNESS, 2), new CrownMobEffectUtil(MobEffects.HUNGER, 5), new CrownMobEffectUtil(MobEffects.MINING_FATIGUE, 3), new CrownMobEffectUtil(MobEffects.SLOW_FALLING, 1), new CrownMobEffectUtil(MobEffects.JUMP_BOOST, 2), new CrownMobEffectUtil(MobEffects.INVISIBILITY, 1), new CrownMobEffectUtil(MobEffects.SLOWNESS, 2, MobEffects.RESISTANCE, 1), new CrownMobEffectUtil(MobEffects.STRENGTH, 2), new CrownMobEffectUtil(MobEffects.HASTE, 2), new CrownMobEffectUtil(MobEffects.REGENERATION, 2), new CrownMobEffectUtil(MobEffects.RESISTANCE, 2), new CrownMobEffectUtil(MobEffects.SATURATION, 1), new CrownMobEffectUtil(MobEffects.ABSORPTION, 3)};
@@ -509,21 +510,30 @@ public class ServerModEvents implements DedicatedServerModInitializer {
             }
         });
 
-        ServerTickEvents.END_SERVER_TICK.register(ActionbarManager::tick);
+        ServerTickEvents.END_SERVER_TICK.register((server) -> {
+            for (UUID uuid : new ArrayList<>(removeCrownNextTickUUIDs)) {
+                ServerPlayer player = server.getPlayerList().getPlayer(uuid);
+                if (player != null) {
+                    if (ModItems.isWearingCrown(player)) {
+                        removePlayerCrown(player);
+                    } else {
+                        onLoseCrown(player);
+                    }
+                    removeCrownNextTickUUIDs.remove(uuid);
+                }
+            }
+
+            ActionbarManager.tick(server);
+        });
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(ServerModEvents::afterPlayerChangeLevel);
         ServerPlayerEvents.JOIN.register((player) -> {
             for (UUID uuid : new ArrayList<>(loseCrownLaterUUIDs)){
                 //if that player is on the lose crown list
-                if (uuid.equals(player.getUUID()) && ModItems.isWearingCrown(player)) {
-                    //remove the player's crown
-                    removePlayerCrown(player);
-
-                    //remove them from the list
-                    loseCrownLaterUUIDs.remove(uuid);
-                } else if (uuid.equals(player.getUUID())) {
-                    onLoseCrown(player);
-
-                    //remove them from the list
+                if (uuid.equals(player.getUUID())) {
+                    //Wait until the next server tick so the client receives the equipment update.
+                    if (!removeCrownNextTickUUIDs.contains(uuid)) {
+                        removeCrownNextTickUUIDs.add(uuid);
+                    }
                     loseCrownLaterUUIDs.remove(uuid);
                 }
             }

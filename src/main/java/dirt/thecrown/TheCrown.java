@@ -11,8 +11,6 @@ import dirt.thecrown.item.ModItems;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.ModContainer;
-import net.minecraft.world.entity.item.ItemEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +30,6 @@ public class TheCrown implements ModInitializer {
 	//DONE make the combat log system transfer crown when someone leaves (detection is already in place, we just need implementation)
 	// after the player is punished from combat log system, make sure they are no longer in combat
 	//DONE make it so that when someone combat logs, if they lose the crown to someone who isn't in the game anymore, then spawn the crown at the altar
-
-	//FIXME when forceremovecrown is used on an offline player, after that player joins back, they will still PURELY VISUALLY wear the crown
 
 	//TODO [OPTIONAL] limit warp number?
 
