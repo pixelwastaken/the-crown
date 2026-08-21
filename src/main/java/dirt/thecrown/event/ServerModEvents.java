@@ -467,7 +467,7 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         });
 
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
-            if (entity instanceof ServerPlayer victim && victim.getKillCredit() instanceof ServerPlayer attacker && ModItems.isWearingCrown(victim)) {
+            if (entity instanceof ServerPlayer victim && source.getEntity() instanceof ServerPlayer attacker && attacker != victim && ModItems.isWearingCrown(victim)) {
                 // set the combat log time
                 victim.setAttached(ModAttachments.COMBAT_LOG_ATTACHMENT, Instant.now().getEpochSecond());
 
