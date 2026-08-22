@@ -443,7 +443,7 @@ public class ServerModEvents implements DedicatedServerModInitializer {
             ServerLevel serverLevel = (ServerLevel)level;
             if (entity instanceof Interaction) {
                 SavedRecentKingData savedRecentKingData = SavedRecentKingData.getSavedRecentKingData(serverLevel.getServer());
-                if (savedRecentKingData.getRecentKing().equals(player.nameAndId())) {
+                if (player.nameAndId().equals(savedRecentKingData.getRecentKing())) {
                     player.sendSystemMessage(Component.literal("Nice try, but you cannot have The Crown consecutively!").withStyle(ChatFormatting.RED));
                     return InteractionResult.PASS;
                 } else {
