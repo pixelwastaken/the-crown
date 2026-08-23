@@ -252,6 +252,11 @@ public class ServerModEvents implements DedicatedServerModInitializer {
             LuckPerms lp = LuckPermsProvider.get();
             User user = lp.getPlayerAdapter(ServerPlayer.class).getUser(player);
             user.data().clear((node) -> node.getKey().equals("group.crown"));
+            //also make sure they can still warp (incase they lost the crown due to combat log)
+            user.data().add(PermissionNode.builder().permission("blossom").value(true).build());
+            user.data().add(PermissionNode.builder().permission("blossom.warps.warp").value(true).build());
+            user.data().add(PermissionNode.builder().permission("blossom.tpa").value(true).build());
+
             lp.getUserManager().saveUser(user);
         }
 
