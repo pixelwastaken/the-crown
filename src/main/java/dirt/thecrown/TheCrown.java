@@ -33,7 +33,10 @@ public class TheCrown implements ModInitializer {
 
 	//TODO [OPTIONAL] limit warp number?
 
-	//TODO add the ability to self-reset your speed glitch
+	//TODO make it so that /fremovespeedglitch removes the attribute modifier for soul speed boots
+	// BUT ONLY /FREMOVE  NOTTT THE NORMAL REMOVE SPEED GLITCH COMMAND
+	//TODO make the crown broadcastGlobalMessages appear in dmcc
+
 
 	public void onInitialize() {
 		ModItems.initialize();

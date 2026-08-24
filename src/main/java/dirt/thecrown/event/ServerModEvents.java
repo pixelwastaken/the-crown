@@ -51,7 +51,9 @@ import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.Identifier;
@@ -61,6 +63,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 import net.minecraft.server.players.NameAndId;
+import net.minecraft.server.players.PlayerList;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
@@ -68,12 +71,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Display;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.Interaction;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
@@ -248,6 +246,11 @@ public class ServerModEvents implements DedicatedServerModInitializer {
     /// This does NOT remove the item.
     private static void onLoseCrown(ServerPlayer player) {
         resetWaypointIcon(player.level(), player);
+
+
+        //make sure the player is no longer in combat
+        player.setAttached(ModAttachments.COMBAT_LOG_ATTACHMENT, 0L);
+
         if (TheCrown.hasLuckPerms) {
             LuckPerms lp = LuckPermsProvider.get();
             User user = lp.getPlayerAdapter(ServerPlayer.class).getUser(player);
@@ -355,7 +358,27 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         // sprinting, effect, or equipment modifiers.
         player.getAttributes().resetBaseValue(Attributes.MOVEMENT_SPEED);
         player.connection.send(new ClientboundUpdateAttributesPacket(player.getId(), List.of(speed)));
-        context.getSource().sendSuccess(() -> Component.literal("%s's speed glitch has been removed.".formatted(player.getPlainTextName())).withStyle(ChatFormatting.BLUE), false);
+
+
+        String includingSoulSpeed;
+        //if the source is an admin
+        if (context.getSource().permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
+            //remove the soul speed modifier from the player, if they have it
+//            speed.removeModifier(Identifier.)
+            Identifier soulSpeedId = Identifier.fromNamespaceAndPath("minecraft", "enchantment.soul_speed/feet");
+            if (speed.hasModifier(soulSpeedId)) {
+                speed.removeModifier(soulSpeedId);
+                player.connection.send(new ClientboundUpdateAttributesPacket(player.getId(), List.of(speed)));
+                includingSoulSpeed = " Soul Speed modifier removed. ";
+            } else {
+                includingSoulSpeed = "";
+            }
+
+        } else {
+            includingSoulSpeed = "";
+        }
+
+        context.getSource().sendSuccess(() -> Component.literal(("%s's speed glitch has been removed." + includingSoulSpeed).formatted(player.getPlainTextName())).withStyle(ChatFormatting.BLUE), false);
         return 1;
     }
 
@@ -392,8 +415,12 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         }
 
         Component compMessage = Component.literal(message).withStyle(ChatFormatting.GOLD);
-        server.getPlayerList().broadcastSystemMessage(compMessage, false);
-        server.sendSystemMessage(compMessage);
+
+        PlayerList playerList = server.getPlayerList();
+        playerList.broadcastSystemMessage(compMessage, false);
+        //TODO test to see if it will appear on dmcc now
+        playerList.broadcastChatMessage(PlayerChatMessage.system(compMessage.getString()), (ServerPlayer) null, ChatType.bind(ChatType.SAY_COMMAND, (Entity)null));
+
         ActionbarManager.queue(compMessage, 200);
     }
 
