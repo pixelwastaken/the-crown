@@ -419,7 +419,7 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         PlayerList playerList = server.getPlayerList();
         playerList.broadcastSystemMessage(compMessage, false);
         //TODO test to see if it will appear on dmcc now
-        playerList.broadcastChatMessage(PlayerChatMessage.system(compMessage.getString()), (ServerPlayer) null, ChatType.bind(ChatType.SAY_COMMAND, (Entity)null));
+//        playerList.broadcastChatMessage(PlayerChatMessage.system(compMessage.getString()), (ServerPlayer) null, ChatType.bind(ChatType.SAY_COMMAND, (Entity)null));
 
         ActionbarManager.queue(compMessage, 200);
     }
