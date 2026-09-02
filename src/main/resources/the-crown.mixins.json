@@ -4,12 +4,19 @@
   "compatibilityLevel": "JAVA_25",
   "mixins": [
     "BedBlockMixin",
-    "EntityAccessor",
+    "BundleContentsMixin",
     "ExampleMixin",
+    "GrindstoneSlot2Mixin",
+    "GrindstoneSlot3Mixin",
+    "ItemCombinerMenu2Mixin",
     "ItemEntityMixin",
+    "ItemFrameMixin",
     "LivingEntityMixin",
     "PlayerMixin",
     "ServerPlayerMixin",
+    "ShelfBlockMixin",
+    "ShulkerBoxSlotMixin",
+    "SlotMixin",
     "WaypointTransmitterMixin"
   ],
   "injectors": {

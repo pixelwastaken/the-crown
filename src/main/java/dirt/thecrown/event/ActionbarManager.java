@@ -8,7 +8,6 @@ package dirt.thecrown.event;
 import dirt.thecrown.TheCrown;
 import dirt.thecrown.dataattachment.ModAttachments;
 import dirt.thecrown.item.ModItems;
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
@@ -37,14 +36,14 @@ public class ActionbarManager {
         remaining = ticks;
     }
 
-    public static void clearActionbars(MinecraftServer server) {
-        for(ServerPlayer player : server.getPlayerList().getPlayers()) {
-            player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty()));
-        }
-    }
-    public static void clearPlayerActionbar(ServerPlayer player) {
-        player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty()));
-    }
+//    public static void clearActionbars(MinecraftServer server) {
+//        for(ServerPlayer player : server.getPlayerList().getPlayers()) {
+//            player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty()));
+//        }
+//    }
+//    public static void clearPlayerActionbar(ServerPlayer player) {
+//        player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty()));
+//    }
 
     public static void tick(MinecraftServer server) {
         if (remaining > 0 && message != null) {
@@ -52,6 +51,7 @@ public class ActionbarManager {
                 player.connection.send(new ClientboundSetActionBarTextPacket(message));
 
                 ModItems.giveCrownHelmetEffects(player);
+                ModItems.giveExcaliburEffects(player);
             }
 
             remaining--;
@@ -89,7 +89,7 @@ public class ActionbarManager {
                 player.connection.send(new ClientboundSetActionBarTextPacket(message));
 
                 ModItems.giveCrownHelmetEffects(player);
-
+                ModItems.giveExcaliburEffects(player);
                 player.setAttached(ModAttachments.WAS_IN_COMBAT_ATTACHMENT, inCombat);
             }
         }

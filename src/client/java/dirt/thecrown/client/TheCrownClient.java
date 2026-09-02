@@ -20,15 +20,16 @@ public class TheCrownClient implements ClientModInitializer {
 	}
 
 	public void onInitializeClient() {
-		ItemTooltipCallback.EVENT.register((ItemTooltipCallback)(stack, context, type, tooltip) -> {
+		ItemTooltipCallback.EVENT.register((stack, context, type, tooltip) -> {
 			if (stack.is(ModItems.CROWN_CHUNK)) {
 				tooltip.add(Component.translatable("item.the-crown.crown_chunk.info").withStyle(ChatFormatting.GOLD));
 				tooltip.add(Component.translatable("item.the-crown.crown_chunk.info2").withStyle(ChatFormatting.GOLD));
 			}
 
 		});
-		DefaultItemComponentEvents.MODIFY.register((DefaultItemComponentEvents.ModifyCallback)(modifyContext) -> modifyContext.modify(ModItems.CROWN, ModItems::crownDefaultItemComponents));
-		DefaultItemComponentEvents.MODIFY.register((DefaultItemComponentEvents.ModifyCallback)(modifyContext) -> modifyContext.modify(ModItems.CRACKED_CROWN, ModItems::crownDefaultItemComponents));
-		UseEntityCallback.EVENT.register((UseEntityCallback)(player, level, hand, entity, hitResult) -> (InteractionResult)(entity instanceof Interaction ? InteractionResult.SUCCESS : InteractionResult.PASS));
+		DefaultItemComponentEvents.MODIFY.register((modifyContext) -> modifyContext.modify(ModItems.CROWN, ModItems::crownDefaultItemComponents));
+		DefaultItemComponentEvents.MODIFY.register((modifyContext) -> modifyContext.modify(ModItems.CRACKED_CROWN, ModItems::crownDefaultItemComponents));
+		DefaultItemComponentEvents.MODIFY.register((modifyContext) -> modifyContext.modify(ModItems.EXCALIBUR, ModItems::excaliburDefaultItemComponents));
+		UseEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> (entity instanceof Interaction ? InteractionResult.SUCCESS : InteractionResult.PASS));
 	}
 }

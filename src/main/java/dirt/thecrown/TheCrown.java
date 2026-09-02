@@ -33,9 +33,9 @@ public class TheCrown implements ModInitializer {
 
 	//TODO [OPTIONAL] limit warp number?
 
-	//TODO make it so that /fremovespeedglitch removes the attribute modifier for soul speed boots
-	// BUT ONLY /FREMOVE  NOTTT THE NORMAL REMOVE SPEED GLITCH COMMAND
 	//TODO make the crown broadcastGlobalMessages appear in dmcc
+
+	//TODO make it so you cant put excalibur in shelves/item frames
 
 
 	public void onInitialize() {

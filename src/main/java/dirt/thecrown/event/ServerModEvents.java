@@ -51,9 +51,7 @@ import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.Identifier;
@@ -624,6 +622,7 @@ public class ServerModEvents implements DedicatedServerModInitializer {
         });
         DefaultItemComponentEvents.MODIFY.register((DefaultItemComponentEvents.ModifyCallback)(modifyContext) -> modifyContext.modify(ModItems.CROWN, ModItems::crownDefaultItemComponents));
         DefaultItemComponentEvents.MODIFY.register((DefaultItemComponentEvents.ModifyCallback)(modifyContext) -> modifyContext.modify(ModItems.CRACKED_CROWN, ModItems::crownDefaultItemComponents));
+        DefaultItemComponentEvents.MODIFY.register((DefaultItemComponentEvents.ModifyCallback)(modifyContext) -> modifyContext.modify(ModItems.EXCALIBUR, ModItems::excaliburDefaultItemComponents));
     }
 
 

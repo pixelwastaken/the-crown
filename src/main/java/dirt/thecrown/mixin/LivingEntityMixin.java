@@ -18,6 +18,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.waypoints.WaypointTransmitter;
@@ -103,6 +104,25 @@ public abstract class LivingEntityMixin extends Entity implements Attackable, Wa
             }
         }
 
+    }
+
+
+    @Inject(
+            method = "drop",
+            at = {@At("HEAD")},
+            cancellable = true
+    )
+    private void preventExcaliburDrop(ItemStack itemStack, boolean randomly, boolean thrownFromHand, CallbackInfoReturnable<ItemEntity> cir) {
+        LivingEntity self = (LivingEntity)(Object)this;
+        if (self instanceof ServerPlayer plr) {
+            if (itemStack.is(ModItems.EXCALIBUR)) {
+
+                //this will delete the item when the player drops it
+                TheCrown.LOGGER.info("Prevented Excalibur from dropping for {}", plr.getPlainTextName());
+                cir.setReturnValue(null);
+            }
+
+        }
     }
 
 
