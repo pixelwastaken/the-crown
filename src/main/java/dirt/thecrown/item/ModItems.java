@@ -50,12 +50,13 @@ public class ModItems {
 
     public static final Item EXCALIBUR = register(
             "excalibur",
-            Item::new,
-            (new Item.Properties())
+            ExcaliburItem::new,
+            new Item.Properties()
                     .rarity(Rarity.EPIC)
                     .component(DataComponents.UNBREAKABLE, Unit.INSTANCE)
                     .fireResistant()
                     .sword(ToolMaterial.NETHERITE, 3, -2.4F)
+                    .useCooldown(0.5f) //this is the same cooldown as a wind charge
     );
 
     public ModItems() {
