@@ -5,8 +5,13 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -17,38 +22,28 @@ public class ExcaliburItem extends Item {
 
     @Override
     public InteractionResult use(final Level level, final Player player, final InteractionHand hand) {
-        // Add custom logic here
-        if (!level.isClientSide()) {
-            ServerLevel server = (ServerLevel) level;
-
-            // Where the sword roughly is (server only knows coarse transforms)
-            Vec3 basePos = player.getEyePosition()
-                    .add(player.getLookAngle().scale(0.6)); // forward from face
-
-            // Spawn a circular ring of flame particles
-            int points = 20;
-            float radius = 0.4f;
-
-            for (int i = 0; i < points; i++) {
-                float angle = (float) (i * (Math.PI * 2 / points));
-
-                double ox = Math.cos(angle) * radius;
-                double oz = Math.sin(angle) * radius;
-
-                double x = basePos.x + ox;
-                double y = basePos.y - 0.4;
-                double z = basePos.z + oz;
-
-                server.sendParticles(
-                        ParticleTypes.FLAME,
-                        x, y, z,
-                        1,   // count
-                        0, 0, 0,
-                        0.0
-                );
-            }
-            return InteractionResult.SUCCESS;
+        ItemStack stack = player.getItemInHand(hand);
+        if (level instanceof ServerLevel serverLevel) {
+            Projectile.spawnProjectileFromRotation(
+                    (source, l, itemStack) -> new WindCharge(player, level, player.position().x(), player.getEyePosition().y(), player.position().z()),
+                    serverLevel,
+                    stack,
+                    player,
+                    0.0F,
+                    1.5F,
+                    0.0F
+            );
+            Projectile.spawnProjectileFromRotation(
+                    (source, l, itemStack) -> new ExcaliburFireball(level, player, player.getLookAngle(), 10),
+                    serverLevel,
+                    stack,
+                    player,
+                    -5.0F, //negative brings it up, positive brings it down
+                    1.5F,
+                    0.0F
+            );
         }
-        return InteractionResult.PASS;
+
+        return InteractionResult.SUCCESS;
     }
 }
