@@ -26,17 +26,13 @@ public class ExcaliburFireball extends LargeFireball {
 
         //if it hits a wind charge, return
         if (victim instanceof WindCharge) {
-            TheCrown.LOGGER.info("Excalibur fireball hit a wind charge, returning without damaging it.");
-            return;
-        }
-        Entity owner = this.getOwner();
-        //make sure that the fireball doesn't damage the player that shot it (aka the person holding Excalibur)
-        if (owner != null && !owner.getUUID().equals(victim.getUUID())) {
-            TheCrown.LOGGER.info("Excalibur fireball hit the owner, returning without damaging them.");
+            TheCrown.LOGGER.info("Excalibur fireball hit a wind charge, returning without damaging or exploding it.");
             return;
         }
 
+
         if (this.level() instanceof ServerLevel serverLevel) {
+            Entity owner = this.getOwner();
             DamageSource damageSource = this.damageSources().fireball(this, owner);
             victim.hurtServer(serverLevel, damageSource, 6.0F);
             EnchantmentHelper.doPostAttackEffects(serverLevel, victim, damageSource);
