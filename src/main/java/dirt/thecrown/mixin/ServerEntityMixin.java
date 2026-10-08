@@ -16,10 +16,7 @@ public class ServerEntityMixin {
     )
     //basically suppress the isRemoved check so that the warning doesn't appear in the console
     private boolean modifyIsRemoved(boolean original) {
-        //if the entity is removed, return false, so that the entity can still send pairing data
-        if (original) {
-            return false;
-        }
-        return original;
+        //return false to suppress the warning, return true to allow it to appear in the console
+        return false;
     }
 }
